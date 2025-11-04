@@ -19,6 +19,8 @@ const client = new MongoClient(uri, {
     strict: true,
     deprecationErrors: true,
   },
+  tls: true,
+  tlsAllowInvalidCertificates: true,
 });
 
 app.get("/", (req, res) => {
@@ -28,19 +30,33 @@ app.get("/", (req, res) => {
 async function run() {
   try {
     await client.connect();
+    console.log("Successfully connected to MongoDB");
+
+    const userDB = client.db("userDB");
+    const usersCollection = userDB.collection("users");
+    
+    //add database related api here
+    app.post("/users", async (req, res) => {
+      const newUser = req.body;
+      console.log("user info", newUser);
+      const result = await usersCollection.insertOne(newUser);
+      res.send(result);
+    });
+
+    console.log("POST /users route registered");
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
+    app.listen(port, () => {
+      console.log(`Crud Server is running on port... ${port}`);
+    });
   } finally {
     // await client.close();
   }
 }
 run().catch(console.dir);
-
-app.listen(port, () => {
-  console.log(`Crud Server is running on port... ${port}`);
-});
 
 // * 1. at least one user
 // * 2. set uri with userId and password
